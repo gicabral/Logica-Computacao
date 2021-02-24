@@ -7,10 +7,10 @@ def calculadora(s):
     #inverter a string
     s = list(s[::-1])
 
-    #verificar se um operador não está no final da string
-    if s[0] == "-" or s[0] == "+":
-        erro = "Formato errado"
-        return erro
+    #verificar se um operador não está no final ou no começo da string
+        
+    if s[0] == "-" or s[0] == "+" or s[-1] == "-" or s[-1] == "+":
+        raise ValueError
 
     def valor():
         valor = 0
@@ -18,7 +18,7 @@ def calculadora(s):
         while s and s[-1].isdigit():
             #multiplica por 10 para pegar números compostos
             valor *= 10
-            #adiciona o que esta saiu no pop ao valor
+            #adiciona o que saiu no pop ao valor
             valor += int(s.pop())
         return valor
 
@@ -32,8 +32,10 @@ def calculadora(s):
         op, t = s.pop(), termo()
         if op == "+":
             result += t
-        else:
+        elif op == "-":
             result -= t
+        else:
+            raise ValueError  
     return result
 
 
