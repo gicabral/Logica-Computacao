@@ -1,5 +1,9 @@
 # Logica-Computacao
 
-Como rodar:
+**Como rodar:**
 
-python main.py "1+1"
+`python main.py "operação"`
+
+**Exemplo**:
+
+`python main.py "1+1"`
