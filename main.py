@@ -39,6 +39,8 @@ class Tokenizer:
         elif self.origin[self.position] == '-':
             self.actual = Token("minus", "-")
             self.position = self.position + 1
+        else:
+            raise ValueError("Simbolo desconhecido")
 
 
 class Parser:
@@ -53,17 +55,21 @@ class Parser:
                     if Parser.tokens.actual.type == "int":
                         res += Parser.tokens.actual.value
                     else:
-                        raise ValueError
-                if Parser.tokens.actual.type == "minus":
+                        raise ValueError("Não é um  inteiro")
+                elif Parser.tokens.actual.type == "minus":
                     Parser.tokens.selectNext()
                     if Parser.tokens.actual.type == "int":
                         res -= Parser.tokens.actual.value
                     else:
-                        raise ValueError
+                        raise ValueError("Não é um int")
+                else:
+                    raise ValueError("Não é plus ou minus")
                 Parser.tokens.selectNext()
+            if Parser.tokens.actual.type != "eof":
+                raise ValueError("Não chegou no final da string")
             return res
         else:
-            raise ValueError
+            raise ValueError("Não é um inteiro")
 
     @staticmethod
     def run(origin):
