@@ -56,7 +56,8 @@ class Tokenizer:
 class PrePro():
     @staticmethod
     def filter(entrada):
-        filtro = re.sub("", "", entrada)  #apenas para o meu terminal
+        filtro = re.sub("/\*(.|\n)*?\*/", "",
+                        entrada)  #apenas para o meu terminal
         return filtro
 
 
@@ -120,6 +121,7 @@ class Parser:
 
 def main():
     codigo = PrePro.filter(conta)
+    print(codigo)
     Parser.run(codigo)
 
 
