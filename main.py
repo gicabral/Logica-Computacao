@@ -56,8 +56,7 @@ class Tokenizer:
 class PrePro():
     @staticmethod
     def filter(entrada):
-        filtro = re.sub("/\*(.|\n)*?\*/", "",
-                        entrada)  #apenas para o meu terminal
+        filtro = re.sub("/\*(.|\n)*?\*/", "", entrada)
         return filtro
 
 
@@ -65,6 +64,8 @@ class Parser:
     @staticmethod
     def parseTerm():
         res = Parser.tokens.actual.value
+        if Parser.tokens.actual.type == 'eof':
+            raise ValueError("String vazia, nenhuma operação")
         Parser.tokens.selectNext()
         while Parser.tokens.actual.type == "mult" or Parser.tokens.actual.type == "div":
             if Parser.tokens.actual.type == "mult":
@@ -83,7 +84,7 @@ class Parser:
                         "Dois operadores seguidos ou operador isolado")
             else:
                 raise ValueError("Simbolo invalido")
-            Parser.tokens.selectNext()  #4/2/2
+            Parser.tokens.selectNext()
         return res
 
     @staticmethod
