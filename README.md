@@ -8,6 +8,6 @@
 
 `python main.py "1+1"`
 
-## Diagrama Sintático
+## Diagrama Sintático com multiplicação e divisão
 
-![](diagrama_sintatico.png)
+![](diagrama_mult_div.png)
