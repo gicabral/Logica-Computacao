@@ -10,4 +10,4 @@
 
 ## Diagrama Sintático com multiplicação e divisão
 
-![](diagrama_mult_div.png)
+![](diagram_mult_div.png)
