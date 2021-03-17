@@ -49,6 +49,14 @@ class Tokenizer:
             self.actual = Token("div", "/")
             self.position = self.position + 1
 
+        elif self.origin[self.position] == '(':
+            self.actual = Token("lpar", "(")
+            self.position = self.position + 1
+
+        elif self.origin[self.position] == ')':
+            self.actual = Token("rpar", ")")
+            self.position = self.position + 1
+
         else:
             raise ValueError("Simbolo desconhecido")
 
@@ -63,28 +71,16 @@ class PrePro():
 class Parser:
     @staticmethod
     def parseTerm():
-        res = Parser.tokens.actual.value
-        if Parser.tokens.actual.type == 'eof':
-            raise ValueError("String vazia, nenhuma operação")
-        Parser.tokens.selectNext()
+        res = Parser.parseFactor()
         while Parser.tokens.actual.type == "mult" or Parser.tokens.actual.type == "div":
             if Parser.tokens.actual.type == "mult":
                 Parser.tokens.selectNext()
-                if Parser.tokens.actual.type == "int":
-                    res = res * Parser.tokens.actual.value
-                else:
-                    raise ValueError(
-                        "Dois operadores seguidos ou operador isolado")
+                res = res * Parser.parseFactor()
             elif Parser.tokens.actual.type == "div":
                 Parser.tokens.selectNext()
-                if Parser.tokens.actual.type == "int":
-                    res = res // Parser.tokens.actual.value
-                else:
-                    raise ValueError(
-                        "Dois operadores seguidos ou operador isolado")
+                res = res // Parser.parseFactor()
             else:
                 raise ValueError("Simbolo invalido")
-            Parser.tokens.selectNext()
         return res
 
     @staticmethod
@@ -93,21 +89,42 @@ class Parser:
         while Parser.tokens.actual.type == "plus" or Parser.tokens.actual.type == "minus":
             if Parser.tokens.actual.type == "plus":
                 Parser.tokens.selectNext()
-                if Parser.tokens.actual.type == "int":
-                    res = res + Parser.parseTerm()
-                else:
-                    raise ValueError(
-                        "Dois operadores seguidos ou operador isolado")
+                res = res + Parser.parseTerm()
+
             elif Parser.tokens.actual.type == "minus":
                 Parser.tokens.selectNext()
-                if Parser.tokens.actual.type == "int":
-                    res = res - Parser.parseTerm()
-                else:
-                    raise ValueError(
-                        "Dois operadores seguidos ou operador isolado")
+                res = res - Parser.parseTerm()
             else:
                 raise ValueError("Simbolo invalido")
         return res
+
+    @staticmethod
+    def parseFactor():
+        if Parser.tokens.actual.type == "int":
+            res = Parser.tokens.actual.value
+            Parser.tokens.selectNext()
+            return res
+        elif Parser.tokens.actual.type == "plus" or Parser.tokens.actual.type == "minus":
+            if Parser.tokens.actual.type == "plus":
+                Parser.tokens.selectNext()
+                res = Parser.parseFactor()
+                return res
+            else:
+                Parser.tokens.selectNext()
+                res = Parser.parseFactor()
+                return -res
+
+        elif Parser.tokens.actual.type == "lpar":
+            Parser.tokens.selectNext()
+            res = Parser.parseExpression()
+            if Parser.tokens.actual.type == "rpar":
+                Parser.tokens.selectNext()
+                return res
+            else:
+                raise ValueError("Não fechou o parentesis")
+
+        else:
+            raise ValueError("nao sei")
 
     @staticmethod
     def run(origin):
