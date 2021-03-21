@@ -8,6 +8,10 @@
 
 `python main.py "1+1"`
 
-## Diagrama Sintático com multiplicação e divisão
+## Diagrama Sintático para "+", "-", "*", "/" e "()"
 
-![](diagram_mult_div.png)
+![](diagrama_parentesis.png)
+
+## EBNF para "+", "-", "*", "/" e "()"
+
+![](EBNF_parentesis.png)
