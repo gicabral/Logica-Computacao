@@ -1,8 +1,7 @@
 import sys
 import re
 
-conta = sys.argv[1]
-
+arquivo = sys.argv[1]
 
 class Token:
     def __init__(self, tipo, valor):
@@ -65,54 +64,56 @@ class PrePro():
     @staticmethod
     def filter(entrada):
         filtro = re.sub(r"/\*(.|\n)*?\*/", "", entrada)
-        return filtro
-
+        return filtro     
 
 class Parser:
     @staticmethod
     def parseTerm():
-        res = Parser.parseFactor()
+        node = Parser.parseFactor()
         while Parser.tokens.actual.type == "mult" or Parser.tokens.actual.type == "div":
             if Parser.tokens.actual.type == "mult":
                 Parser.tokens.selectNext()
-                res = res * Parser.parseFactor()
+                node = BinOp("*", [node, Parser.parseFactor()])
             elif Parser.tokens.actual.type == "div":
                 Parser.tokens.selectNext()
-                res = res // Parser.parseFactor()
+                node = BinOp("/", [node, Parser.parseFactor()])
             else:
                 raise ValueError("Simbolo invalido")
-        return res
+        return node
 
     @staticmethod
     def parseExpression():
-        res = Parser.parseTerm()
+        node = Parser.parseTerm()
         while Parser.tokens.actual.type == "plus" or Parser.tokens.actual.type == "minus":
             if Parser.tokens.actual.type == "plus":
                 Parser.tokens.selectNext()
-                res = res + Parser.parseTerm()
+                node = BinOp("+", [node, Parser.parseTerm()])
 
             elif Parser.tokens.actual.type == "minus":
                 Parser.tokens.selectNext()
-                res = res - Parser.parseTerm()
+                node = BinOp("-", [node, Parser.parseTerm()])
             else:
                 raise ValueError("Simbolo invalido")
-        return res
+        return node
 
     @staticmethod
     def parseFactor():
         if Parser.tokens.actual.type == "int":
-            res = Parser.tokens.actual.value
+            node = Parser.tokens.actual.value
+            node = IntVal(node, [])
             Parser.tokens.selectNext()
-            return res
+            return node
         elif Parser.tokens.actual.type == "plus" or Parser.tokens.actual.type == "minus":
             if Parser.tokens.actual.type == "plus":
                 Parser.tokens.selectNext()
-                res = Parser.parseFactor()
-                return res
+                node = Parser.parseFactor()
+                node = UnOp("+", [node])
+                return node
             else:
                 Parser.tokens.selectNext()
-                res = Parser.parseFactor()
-                return -res
+                node = Parser.parseFactor()
+                node = UnOp("-", [node])
+                return node
 
         elif Parser.tokens.actual.type == "lpar":
             Parser.tokens.selectNext()
@@ -124,22 +125,74 @@ class Parser:
                 raise ValueError("Não fechou o parentesis")
 
         else:
-            raise ValueError("nao sei")
+            raise ValueError("Operadoração inválida")
 
     @staticmethod
     def run(origin):
         Parser.tokens = Tokenizer(origin, None)
         Parser.tokens.selectNext()
-        res = Parser.parseExpression()
+        node = Parser.parseExpression()
         if Parser.tokens.actual.type != "eof":
             raise ValueError("Não chegou no final da string")
-        print(res)
-        return res
+        print(node.evaluate())
+        return node
 
+class Node():
+    def __init__(self, valor, filho):
+        self.valor = valor
+        self.filho = filho
+
+    def evaluate(self):
+        pass
+
+class BinOp(Node):
+    def __init__(self, valor, filho):
+        super().__init__(valor, filho)
+
+    def evaluate(self):    
+        if self.valor == "+":
+            return self.filho[0].evaluate() + self.filho[1].evaluate()
+        elif self.valor == "-":
+            return self.filho[0].evaluate() - self.filho[1].evaluate()
+        elif self.valor == "*":
+            return self.filho[0].evaluate() * self.filho[1].evaluate()
+        elif self.valor == "/":
+            return self.filho[0].evaluate() // self.filho[1].evaluate()           
+
+class UnOp(Node):
+    def __init__(self, valor, filho):
+        super().__init__(valor, filho)  
+
+    def evaluate(self):
+        if self.valor == "-":
+            res = self.filho[0].evaluate()
+            return -res
+        else:
+            res = self.filho[0].evaluate()
+            return res
+
+class IntVal(Node):
+    def __init__(self, valor, filho):
+        super().__init__(valor, filho)  
+
+    def evaluate(self):
+        return self.valor
+
+class NoOp(Node):
+    def __init__(self, valor, filho):
+        super().__init__(valor, filho)  
+
+    def evaluate(self):
+        pass                                    
+
+
+     
 
 def main():
+    with open(f"{arquivo}", "r+") as file:
+        conta = file.read()
     codigo = PrePro.filter(conta)
     Parser.run(codigo)
-
+    
 
 if __name__ == '__main__': main()
