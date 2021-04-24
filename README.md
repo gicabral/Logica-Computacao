@@ -2,16 +2,16 @@
 
 **Como rodar:**
 
-`python main.py "operação"`
+`python main.py nome_arquivo.c`
 
 **Exemplo**:
 
-`python main.py "1+1"`
+`python main.py myfile.c`
 
-## Diagrama Sintático para "+", "-", "*", "/" e "()"
+## Diagrama Sintático com bloco de instruções, print e variáveis 
 
-![](diagrama_parentesis.png)
+![](/imagens/diagrama_comando.png)
 
-## EBNF para "+", "-", "*", "/" e "()"
+## EBNF com bloco de instruções, print e variáveis 
 
-![](EBNF_parentesis.png)
+![](/imagens/EBNF_command.png)
