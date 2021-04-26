@@ -23,7 +23,7 @@ class Tokenizer:
 
     def selectNext(self):
         while (self.position < len(
-                self.origin)) and (self.origin[self.position] == " "):
+                self.origin)) and (self.origin[self.position] == " " or self.origin[self.position] == "\n"):
             self.position = self.position + 1
         if self.position == len(self.origin):
             self.actual = Token("eof", "eof")
@@ -64,10 +64,6 @@ class Tokenizer:
             self.actual = Token("assignment", "=")
             self.position = self.position + 1
 
-        elif self.origin[self.position] == '\n':
-            self.actual = Token("breakline", "\n")
-            self.position = self.position + 1  
-
         elif self.origin[self.position] == ';':
             self.actual = Token("end", ";")
             self.position = self.position + 1      
@@ -93,20 +89,20 @@ class Parser:
     @staticmethod
     def block():
         nodes = []
-        while Parser.tokens.actual.type != "end":
+        while Parser.tokens.actual.type != "eof":
             nodes.append(Parser.command())
-            if Parser.tokens.actual.type == "breakline":
+            if Parser.tokens.actual.type == "end":
                 Parser.tokens.selectNext()
             else:
-                raise ValueError ("Token '\\n' não encontrado")   
+                raise ValueError ("Token ';' não encontrado", Parser.tokens.actual.type)   
 
-        if Parser.tokens.actual.type == "end":
+        if Parser.tokens.actual.type == "eof":
             Parser.tokens.selectNext()
             node = Block(" ", nodes)
             return node
 
         else:
-            raise ValueError("Token ';' não encontrado")
+            raise ValueError("Não chegou no fim do arquivo")
 
     @staticmethod
     def command():
