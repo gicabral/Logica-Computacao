@@ -3,7 +3,7 @@ import sys
 
 arquivo = sys.argv[1]
 
-reserved = "PRINTLN"
+reserved = "println"
 PRINTLN  = reserved
 
 class Token:
@@ -75,7 +75,7 @@ class Tokenizer:
                 palavra = palavra + self.origin[self.position]
                 self.position = self.position + 1
 
-            palavra = palavra.upper()    
+               
             if palavra in reserved:
                 self.actual = Token(palavra, palavra)
             else:    

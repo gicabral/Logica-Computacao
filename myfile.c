@@ -6,9 +6,9 @@ y = 10;
     mult = x * y;
     div = x/y;
 
-Println (soma);
-PRINTLN (mult);
-priNtln (div);
+println (soma);
+println (mult);
+println (div);
 
 mult_op2 = 2++2-1*2+4;
 println (mult_op2);
