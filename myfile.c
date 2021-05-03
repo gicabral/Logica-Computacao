@@ -15,5 +15,9 @@ println(y);
 }
 i = i + 1;
 }
-println(i);
+println(readln());
+;
+;
+;
+;
 }

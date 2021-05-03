@@ -130,6 +130,7 @@ class Parser:
             Parser.tokens.selectNext()
             while Parser.tokens.actual.type != "rchaves":
                 nodes.append(Parser.command())
+                print(Parser.tokens.actual.type)
 
             if Parser.tokens.actual.type == "rchaves":
                 Parser.tokens.selectNext()
@@ -143,7 +144,7 @@ class Parser:
 
     @staticmethod
     def command():
-        node = 0
+        node = NoOp()
         if Parser.tokens.actual.type == "identifier":
             identifier = Identifier(Parser.tokens.actual.value, [])
             Parser.tokens.selectNext()
@@ -205,12 +206,17 @@ class Parser:
             else:
                 raise ValueError("Não abriu parentesis do if")
 
+        # else:   
+        #     return NoOp()        
+
         if Parser.tokens.actual.type == "semicolon":
             Parser.tokens.selectNext()
-            return node    
+            return node 
 
-        else:   
-            return NoOp() 
+        else:
+            raise ValueError("Erro")       
+
+         
 
     @staticmethod
     def parseFactor():
