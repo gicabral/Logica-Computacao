@@ -3,8 +3,8 @@ import sys
 
 arquivo = sys.argv[1]
 
-reserved = "println"
-PRINTLN  = reserved
+reserved = ["println", "readln", "while", "if", "else"]
+PRINTLN, READLN, WHILE, IF, ELSE  = reserved
 
 class Token:
     def __init__(self, tipo, valor):
@@ -61,12 +61,50 @@ class Tokenizer:
             self.position = self.position + 1
 
         elif self.origin[self.position] == '=':
-            self.actual = Token("assignment", "=")
-            self.position = self.position + 1
+            self.position = self.position + 1 
+            if self.origin[self.position] == '=':
+                self.actual = Token("equal", "==")
+                self.position = self.position + 1
+            else:     
+                self.actual = Token("assignment", "=")
 
         elif self.origin[self.position] == ';':
-            self.actual = Token("end", ";")
-            self.position = self.position + 1      
+            self.actual = Token("semicolon", ";")
+            self.position = self.position + 1   
+
+        elif self.origin[self.position] == '{':
+            self.actual = Token("lchaves", "{")
+            self.position = self.position + 1    
+
+        elif self.origin[self.position] == '}':
+            self.actual = Token("rchaves", "{")
+            self.position = self.position + 1
+
+        elif self.origin[self.position] == '!':
+            self.actual = Token("not", "!")
+            self.position = self.position + 1 
+
+        elif self.origin[self.position] == '==':
+            self.actual = Token("equal", "==")
+            self.position = self.position + 1 
+
+        elif self.origin[self.position] == '&&':
+            self.actual = Token("and", "&&")
+            self.position = self.position + 1 
+
+        elif self.origin[self.position] == '|':
+            self.position = self.position + 1 
+            if self.origin[self.position] == '|':
+                self.actual = Token("or", "||")
+                self.position = self.position + 1 
+
+        elif self.origin[self.position] == '>':
+            self.actual = Token("maior", ">")
+            self.position = self.position + 1 
+
+        elif self.origin[self.position] == '<':
+            self.actual = Token("menor", "<")
+            self.position = self.position + 1                                      
 
         elif self.origin[self.position].isalpha():
             palavra = ""
@@ -75,7 +113,6 @@ class Tokenizer:
                 palavra = palavra + self.origin[self.position]
                 self.position = self.position + 1
 
-               
             if palavra in reserved:
                 self.actual = Token(palavra, palavra)
             else:    
@@ -89,23 +126,24 @@ class Parser:
     @staticmethod
     def block():
         nodes = []
-        while Parser.tokens.actual.type != "eof":
-            nodes.append(Parser.command())
-            if Parser.tokens.actual.type == "end":
-                Parser.tokens.selectNext()
-            else:
-                raise ValueError ("Token ';' não encontrado", Parser.tokens.actual.type)   
-
-        if Parser.tokens.actual.type == "eof":
+        if Parser.tokens.actual.type == "lchaves":
             Parser.tokens.selectNext()
-            node = Block(" ", nodes)
-            return node
+            while Parser.tokens.actual.type != "rchaves":
+                nodes.append(Parser.command())
+
+            if Parser.tokens.actual.type == "rchaves":
+                Parser.tokens.selectNext()
+                node = Block(" ", nodes)
+                return node
+            else:
+                raise ValueError("Token '}' não encontrado", Parser.tokens.actual.type)    
 
         else:
-            raise ValueError("Não chegou no fim do arquivo")
+            raise ValueError("Token '{' não encontrado", Parser.tokens.actual.type)
 
     @staticmethod
     def command():
+        node = 0
         if Parser.tokens.actual.type == "identifier":
             identifier = Identifier(Parser.tokens.actual.value, [])
             Parser.tokens.selectNext()
@@ -113,27 +151,121 @@ class Parser:
                 Parser.tokens.selectNext()
                 node_l = Parser.parseExpression()
                 node = Assignment("=", [identifier, node_l])
-                return node
             else:
-                raise ValueError("Atribuição com '=' não encontrada") 
+                raise ValueError("Atribuição com '=' não encontrada")     
 
         elif Parser.tokens.actual.type == PRINTLN:
             Parser.tokens.selectNext()
-            if(Parser.tokens.actual.type == "lpar"):
+            if Parser.tokens.actual.type == "lpar" :
                 Parser.tokens.selectNext()
                 node_l = Parser.parseExpression()
                 node = Println(PRINTLN, [node_l])
-                if(Parser.tokens.actual.type == "rpar"):
+                if Parser.tokens.actual.type == "rpar":
                     Parser.tokens.selectNext()
-                    return node
                 else:
                     raise ValueError("Não fechou parentesis")    
             else:
-                raise ValueError("Não abriu parentesis do println")
-            
+                raise ValueError("Não abriu parentesis do println")  
+
+        elif Parser.tokens.actual.type == "lchaves":
+            node = Parser.block()
+            return node
+
+        elif Parser.tokens.actual.type == WHILE:
+            Parser.tokens.selectNext()
+            if Parser.tokens.actual.type == "lpar":
+                Parser.tokens.selectNext()
+                node_l = Parser.parseOrExpression()
+                if Parser.tokens.actual.type == "rpar":
+                    Parser.tokens.selectNext()
+                    node_r = Parser.command()
+                    return While("while", [node_l, node_r])
+                else:
+                    raise ValueError("Não fechou parentesis do while", Parser.tokens.actual.value)    
+            else:
+                raise ValueError("Não abriu parentesis no while")
+
+        elif Parser.tokens.actual.type == IF:
+            Parser.tokens.selectNext()
+            if Parser.tokens.actual.type == "lpar":
+                Parser.tokens.selectNext()
+                node = Parser.parseOrExpression()
+                if Parser.tokens.actual.type == "rpar":
+                    Parser.tokens.selectNext()
+                    node_l = Parser.command()
+
+                    if Parser.tokens.actual.type == ELSE:
+                        Parser.tokens.selectNext()
+                        node_r = Parser.command()
+
+                    return If("if", [node, node_l, node_r])  
+
+                else:
+                    raise ValueError("Não fechou parentesis do if")
+            else:
+                raise ValueError("Não abriu parentesis do if")
+
+        if Parser.tokens.actual.type == "semicolon":
+            Parser.tokens.selectNext()
+            return node    
 
         else:   
             return NoOp() 
+
+    @staticmethod
+    def parseFactor():
+        if Parser.tokens.actual.type == "int":
+            node = Parser.tokens.actual.value
+            node = IntVal(node, [])
+            Parser.tokens.selectNext()
+            return node
+
+        elif Parser.tokens.actual.type == "identifier":
+            res = Parser.tokens.actual.value
+            node = Identifier(res, [])
+            Parser.tokens.selectNext()
+            return node
+
+        elif Parser.tokens.actual.type == "plus" or Parser.tokens.actual.type == "minus" or Parser.tokens.actual.type == "not":
+            if Parser.tokens.actual.type == "plus":
+                Parser.tokens.selectNext()
+                node = Parser.parseFactor()
+                node = UnOp("+", [node])
+                return node
+            if Parser.tokens.actual.type == "minus":
+                Parser.tokens.selectNext()
+                node = Parser.parseFactor()
+                node = UnOp("-", [node])
+                return node
+            else:
+                Parser.tokens.selectNext()
+                node = Parser.parseFactor()
+                node = UnOp("!", [node])
+                return node   
+
+        elif Parser.tokens.actual.type == "lpar":
+            Parser.tokens.selectNext()
+            res = Parser.parseOrExpression()
+            if Parser.tokens.actual.type == "rpar":
+                Parser.tokens.selectNext()
+                return res
+            else:
+                raise ValueError("Não fechou o parentesis", Parser.tokens.actual.value)
+
+        elif Parser.tokens.actual.type == READLN:
+            print("entrou no readln")
+            Parser.tokens.selectNext()
+            if Parser.tokens.actual.type == "lpar":
+                Parser.tokens.selectNext()
+                res = Readln('', [])
+                if Parser.tokens.actual.type == "rpar":
+                    Parser.tokens.selectNext()
+                    return res
+            else:
+                raise ValueError("Não fechou o parentesis")
+
+        else:
+            raise ValueError("Operadoração inválida")        
             
     @staticmethod
     def parseTerm():
@@ -165,49 +297,48 @@ class Parser:
         return node
 
     @staticmethod
-    def parseFactor(): 
-        if Parser.tokens.actual.type == "int":
-            node = Parser.tokens.actual.value
-            node = IntVal(node, [])
+    def parseRealExpression():
+        node = Parser.parseExpression()
+        if Parser.tokens.actual.type == "maior":
             Parser.tokens.selectNext()
-            return node
-        elif Parser.tokens.actual.type == "plus" or Parser.tokens.actual.type == "minus":
-            if Parser.tokens.actual.type == "plus":
-                Parser.tokens.selectNext()
-                node = Parser.parseFactor()
-                node = UnOp("+", [node])
-                return node
-            else:
-                Parser.tokens.selectNext()
-                node = Parser.parseFactor()
-                node = UnOp("-", [node])
-                return node
-
-        elif Parser.tokens.actual.type == "lpar":
+            node = BinOp(">", [node, Parser.parseExpression()])
+        elif Parser.tokens.actual.type == "menor":
             Parser.tokens.selectNext()
-            res = Parser.parseExpression()
-            if Parser.tokens.actual.type == "rpar":
-                Parser.tokens.selectNext()
-                return res
-            else:
-                raise ValueError("Não fechou o parentesis")
-
-        elif Parser.tokens.actual.type == "identifier":
-            res = Parser.tokens.actual.value
-            node = Identifier(res, [])
-            Parser.tokens.selectNext()
-            return node
-
-        else:
-            raise ValueError("Operadoração inválida")
+            node = BinOp("<", [node, Parser.parseExpression()])
+        return node
         
+
+    @staticmethod
+    def parseEqualExpression():
+        node = Parser.parseRealExpression()
+        if Parser.tokens.actual.type == "equal":
+            Parser.tokens.selectNext()
+            node = BinOp("==", [node, Parser.parseRealExpression()])
+        return node    
+
+    @staticmethod
+    def parseAndExpression():
+        node = Parser.parseEqualExpression()
+        if Parser.tokens.actual.type == "and":
+            Parser.tokens.selectNext()
+            node = BinOp("&&", [node, Parser.parseEqualExpression()])
+        return node
+
+    @staticmethod
+    def parseOrExpression():
+        node = Parser.parseAndExpression()
+        if Parser.tokens.actual.type == "or":
+            Parser.tokens.selectNext()
+            node = BinOp("||", [node, Parser.parseAndExpression()])
+        return node                 
+
     @staticmethod
     def run(origin):
         Parser.tokens = Tokenizer(origin, None)
         Parser.tokens.selectNext()
         res = Parser.block()
         if Parser.tokens.actual.type != 'eof':
-            raise ValueError('Entrada inválida. Último token não é o EOF.')
+            raise ValueError('Entrada inválida. Último token não é o EOF.')   
         ST = SymbolTable()
         res.evaluate(ST)
         return res
@@ -253,7 +384,17 @@ class BinOp(Node):
         elif self.valor == "*":
             return self.filho[0].evaluate(ST) * self.filho[1].evaluate(ST)
         elif self.valor == "/":
-            return self.filho[0].evaluate(ST) // self.filho[1].evaluate(ST)           
+            return self.filho[0].evaluate(ST) // self.filho[1].evaluate(ST) 
+        elif self.valor == ">":
+            return self.filho[0].evaluate(ST) > self.filho[1].evaluate(ST)
+        elif self.valor == "<":
+            return self.filho[0].evaluate(ST) < self.filho[1].evaluate(ST)
+        elif self.valor == "==":
+            return self.filho[0].evaluate(ST) == self.filho[1].evaluate(ST)
+        elif self.valor == "&&":
+            return self.filho[0].evaluate(ST) and self.filho[1].evaluate(ST)
+        elif self.valor == "||":
+            return self.filho[0].evaluate(ST) or self.filho[1].evaluate(ST)                          
 
 class UnOp(Node):
     def __init__(self, valor, filho):
@@ -263,9 +404,11 @@ class UnOp(Node):
         if self.valor == "-":
             res = self.filho[0].evaluate(ST)
             return -res
-        else:
+        if self.valor == "+":
             res = self.filho[0].evaluate(ST)
             return res
+        else:
+            return not self.filho[0].evaluate(ST)     
 
 class IntVal(Node):
     def __init__(self, valor, filho):
@@ -309,12 +452,38 @@ class Println(Node):
         super().__init__(valor, filho)  
 
     def evaluate(self, ST):
-        print(self.filho[0].evaluate(ST))           
-     
+        print(self.filho[0].evaluate(ST)) 
+
+class Readln(Node):
+    def __init__(self, valor, filho):
+        super().__init__(valor, filho)  
+
+    def evaluate(self, ST):
+        entrada = input()
+        return int(entrada)
+
+class While(Node):
+    def __init__(self, valor, filho):
+        super().__init__(valor, filho)  
+
+    def evaluate(self, ST):
+        while self.filho[0].evaluate(ST) == True: 
+            self.filho[1].evaluate(ST) 
+
+class If(Node):
+    def __init__(self, valor, filho):
+        super().__init__(valor, filho)  
+
+    def evaluate(self, ST):
+        if self.filho[0].evaluate(ST) == True:
+            return self.filho[1].evaluate(ST)
+        elif len(self.filho) == 3:
+            return self.filho[2].evaluate(ST)              
+
 
 def main():
     with open(f"{arquivo}", "r") as file:
-        conta = file.read()
+        conta = file.read()    
     codigo = PrePro.filter(conta)
     Parser.run(codigo)
     
