@@ -123,7 +123,6 @@ class Tokenizer:
         else:
             raise ValueError("Simbolo desconhecido", self.origin[self.position])
 
-
 class Parser:
     @staticmethod
     def block():
