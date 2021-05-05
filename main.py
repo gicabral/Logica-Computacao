@@ -88,9 +88,11 @@ class Tokenizer:
             self.actual = Token("equal", "==")
             self.position = self.position + 1 
 
-        elif self.origin[self.position] == '&&':
-            self.actual = Token("and", "&&")
+        elif self.origin[self.position] == '&':
             self.position = self.position + 1 
+            if self.origin[self.position] == '&':
+                self.actual = Token("and", "&&")
+                self.position = self.position + 1  
 
         elif self.origin[self.position] == '|':
             self.position = self.position + 1 
@@ -130,7 +132,6 @@ class Parser:
             Parser.tokens.selectNext()
             while Parser.tokens.actual.type != "rchaves":
                 nodes.append(Parser.command())
-                print(Parser.tokens.actual.type)
 
             if Parser.tokens.actual.type == "rchaves":
                 Parser.tokens.selectNext()
@@ -150,7 +151,7 @@ class Parser:
             Parser.tokens.selectNext()
             if Parser.tokens.actual.type == "assignment":
                 Parser.tokens.selectNext()
-                node_l = Parser.parseExpression()
+                node_l = Parser.parseOrExpression()
                 node = Assignment("=", [identifier, node_l])
             else:
                 raise ValueError("Atribuição com '=' não encontrada")     
@@ -159,7 +160,7 @@ class Parser:
             Parser.tokens.selectNext()
             if Parser.tokens.actual.type == "lpar" :
                 Parser.tokens.selectNext()
-                node_l = Parser.parseExpression()
+                node_l = Parser.parseOrExpression()
                 node = Println(PRINTLN, [node_l])
                 if Parser.tokens.actual.type == "rpar":
                     Parser.tokens.selectNext()
@@ -188,6 +189,8 @@ class Parser:
 
         elif Parser.tokens.actual.type == IF:
             Parser.tokens.selectNext()
+            node_l = None
+            node_r = None
             if Parser.tokens.actual.type == "lpar":
                 Parser.tokens.selectNext()
                 node = Parser.parseOrExpression()
@@ -198,8 +201,9 @@ class Parser:
                     if Parser.tokens.actual.type == ELSE:
                         Parser.tokens.selectNext()
                         node_r = Parser.command()
+                        return If("if", [node, node_l, node_r]) 
 
-                    return If("if", [node, node_l, node_r])  
+                    return If("if", [node, node_l])  
 
                 else:
                     raise ValueError("Não fechou parentesis do if")
@@ -214,7 +218,7 @@ class Parser:
             return node 
 
         else:
-            raise ValueError("Erro")       
+            raise ValueError("Erro", Parser.tokens.actual.value)       
 
          
 
@@ -259,7 +263,6 @@ class Parser:
                 raise ValueError("Não fechou o parentesis", Parser.tokens.actual.value)
 
         elif Parser.tokens.actual.type == READLN:
-            print("entrou no readln")
             Parser.tokens.selectNext()
             if Parser.tokens.actual.type == "lpar":
                 Parser.tokens.selectNext()
