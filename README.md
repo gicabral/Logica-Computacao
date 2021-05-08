@@ -8,6 +8,8 @@
 
 `python main.py myfile.c`
 
+## Status dos testes
+![git status](http://3.129.230.99/svg/gicabral/Logica-Computacao/)
 ## Diagrama Sintático com While, Else e If
 
 ![](/imagens/ds-if1.png)
