@@ -205,7 +205,7 @@ class Parser:
                     return If("if", [node, node_l])  
 
                 else:
-                    raise ValueError("Não fechou parentesis do if")
+                    raise ValueError("Não fechou parentesis do if", Parser.tokens.actual.value)
             else:
                 raise ValueError("Não abriu parentesis do if")
 
@@ -259,7 +259,7 @@ class Parser:
                 Parser.tokens.selectNext()
                 return res
             else:
-                raise ValueError("Não fechou o parentesis", Parser.tokens.actual.value)
+                raise ValueError("Não fechou o parentesis", Parser.tokens.actual.type)
 
         elif Parser.tokens.actual.type == READLN:
             Parser.tokens.selectNext()
@@ -307,37 +307,41 @@ class Parser:
     @staticmethod
     def parseRealExpression():
         node = Parser.parseExpression()
-        if Parser.tokens.actual.type == "maior":
-            Parser.tokens.selectNext()
-            node = BinOp(">", [node, Parser.parseExpression()])
-        elif Parser.tokens.actual.type == "menor":
-            Parser.tokens.selectNext()
-            node = BinOp("<", [node, Parser.parseExpression()])
+        while Parser.tokens.actual.type == "maior" or Parser.tokens.actual.type == "menor":
+            if Parser.tokens.actual.type == "maior":
+                Parser.tokens.selectNext()
+                node = BinOp(">", [node, Parser.parseExpression()])
+            elif Parser.tokens.actual.type == "menor":
+                Parser.tokens.selectNext()
+                node = BinOp("<", [node, Parser.parseExpression()])
         return node
         
 
     @staticmethod
     def parseEqualExpression():
         node = Parser.parseRealExpression()
-        if Parser.tokens.actual.type == "equal":
-            Parser.tokens.selectNext()
-            node = BinOp("==", [node, Parser.parseRealExpression()])
+        while Parser.tokens.actual.type == "equal":
+            if Parser.tokens.actual.type == "equal":
+                Parser.tokens.selectNext()
+                node = BinOp("==", [node, Parser.parseRealExpression()])
         return node    
 
     @staticmethod
     def parseAndExpression():
         node = Parser.parseEqualExpression()
-        if Parser.tokens.actual.type == "and":
-            Parser.tokens.selectNext()
-            node = BinOp("&&", [node, Parser.parseEqualExpression()])
+        while Parser.tokens.actual.type == "and":
+            if Parser.tokens.actual.type == "and":
+                Parser.tokens.selectNext()
+                node = BinOp("&&", [node, Parser.parseEqualExpression()])
         return node
 
     @staticmethod
     def parseOrExpression():
         node = Parser.parseAndExpression()
-        if Parser.tokens.actual.type == "or":
-            Parser.tokens.selectNext()
-            node = BinOp("||", [node, Parser.parseAndExpression()])
+        while Parser.tokens.actual.type == "or":
+            if Parser.tokens.actual.type == "or":
+                Parser.tokens.selectNext()
+                node = BinOp("||", [node, Parser.parseAndExpression()])
         return node                 
 
     @staticmethod
