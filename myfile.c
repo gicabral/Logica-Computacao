@@ -1,5 +1,7 @@
-{   
-bool x;    
-x = 1 && true;
-println(x);
+
+{
+  if(2){
+    println(42);
+  }
 }
+
