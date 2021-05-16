@@ -3,8 +3,8 @@ import sys
 
 arquivo = sys.argv[1]
 
-reserved = ["println", "readln", "while", "if", "else"]
-PRINTLN, READLN, WHILE, IF, ELSE  = reserved
+reserved = ["println", "readln", "while", "if", "else", "int", "bool", "true", "false", "string"]
+PRINTLN, READLN, WHILE, IF, ELSE, INT, BOOL, TRUE, FALSE, STRING  = reserved
 
 class Token:
     def __init__(self, tipo, valor):
@@ -106,15 +106,30 @@ class Tokenizer:
 
         elif self.origin[self.position] == '<':
             self.actual = Token("menor", "<")
-            self.position = self.position + 1                                      
+            self.position = self.position + 1  
+
+        elif self.origin[self.position] == '"':
+            palavra = ""
+            self.position += 1
+            while (self.position < (len(self.origin))) and \
+                self.origin[self.position] != '"':
+                palavra += self.origin[self.position]
+                self.position += 1
+
+            self.position += 1
+            self.actual = Token(STRING, palavra)                                        
 
         elif self.origin[self.position].isalpha():
             palavra = ""
             while (self.position < len(
                     self.origin)) and (self.origin[self.position].isalpha() or self.origin[self.position].isdigit() or self.origin[self.position] == "_"):
                 palavra = palavra + self.origin[self.position]
-                self.position = self.position + 1
+                self.position = self.position + 1       
 
+            # if palavra == TRUE:
+            #     self.actual = Token(BOOL, True)
+            # elif palavra == FALSE:
+            #     self.actual == Token(BOOL, False)    
             if palavra in reserved:
                 self.actual = Token(palavra, palavra)
             else:    
@@ -209,6 +224,14 @@ class Parser:
             else:
                 raise ValueError("Não abriu parentesis do if")
 
+        elif Parser.tokens.actual.type == BOOL or Parser.tokens.actual.type == INT or Parser.tokens.actual.type == STRING:
+            tipo = Type(Parser.tokens.actual.type, [])
+            Parser.tokens.selectNext()
+            if Parser.tokens.actual.type == "identifier":
+                identifier = Identifier(Parser.tokens.actual.value, [])
+                Parser.tokens.selectNext()
+                node = VarDec("variável", [identifier, tipo])
+
         # else:   
         #     return NoOp()        
 
@@ -271,7 +294,16 @@ class Parser:
                     return res
             else:
                 raise ValueError("Não fechou o parentesis")
+        
+        elif Parser.tokens.actual.type == TRUE or Parser.tokens.actual.type == FALSE:
+            node = BoolVal(Parser.tokens.actual.value, [])
+            Parser.tokens.selectNext()
+            return node
 
+        elif Parser.tokens.actual.type == STRING:
+            node = StringVal(Parser.tokens.actual.value, [])  
+            Parser.tokens.selectNext() 
+            return node
         else:
             raise ValueError("Operadoração inválida")        
             
@@ -366,16 +398,28 @@ class SymbolTable():
     def __init__(self):
         self.table = {}
 
-    def getter(self, key):
-        if key in self.table.keys():
-            res = self.table.get(key)    
-            return res
+    def getter(self, chave):
+        if chave in self.table.keys():
+            tupla = tuple(self.table.get(chave))
+            return tupla
+
         else:
-            raise ValueError("key não está na SymbolTable") 
+            raise ValueError("Chave {} não localizada na Tabela de Símbolos".format(chave))
+    
+    def setter(self, chave, valor): #((nome da variável, [tipo, "TYPE"]), value)
+        if chave in self.table.keys():
+            self.table[chave][0] = valor
+        else:
+            raise ValueError("Chave {} não existe na Tabela de Símbolos".format(chave))
+        return
 
-    def setter(self, key, value):  
-        self.table.update({key: value})         
-
+    def creator(self, chave, tipo):
+        if chave in self.table.keys():
+            raise ValueError("Chave {} já existe na Tabela de Símbolos".format(chave))
+        else:
+            self.table[chave] = [None, tipo]
+            return   
+            
 class Node():
     def __init__(self, valor, filho):
         self.valor = valor
@@ -388,25 +432,59 @@ class BinOp(Node):
     def __init__(self, valor, filho):
         super().__init__(valor, filho)
 
-    def evaluate(self, ST):    
+    def evaluate(self, ST):   
+        f0 = self.filho[0].evaluate(ST) 
+        f1 = self.filho[1].evaluate(ST) 
+
         if self.valor == "+":
-            return self.filho[0].evaluate(ST) + self.filho[1].evaluate(ST)
+            if f0[1] != STRING or f1[1] != STRING:
+                return (f0[0] + f1[0], INT)
+            raise ValueError("Tipos incompatíveis")
         elif self.valor == "-":
-            return self.filho[0].evaluate(ST) - self.filho[1].evaluate(ST)
+            if f0[1] == STRING or f1[1] == STRING:
+                raise ValueError("Tipos incompatíveis")
+            return (f0[0] - f1[0], INT)
         elif self.valor == "*":
-            return self.filho[0].evaluate(ST) * self.filho[1].evaluate(ST)
+            if f0[1] == STRING or f1[1] == STRING:
+                raise ValueError("Tipos incompatíveis")
+            return (f0[0] * f1[0], INT)
         elif self.valor == "/":
-            return self.filho[0].evaluate(ST) // self.filho[1].evaluate(ST) 
+            if f0[1] == STRING or f1[1] == STRING:
+                raise ValueError("Tipos incompatíveis")
+            return (f0[0] // f1[0], INT)
         elif self.valor == ">":
-            return self.filho[0].evaluate(ST) > self.filho[1].evaluate(ST)
+            if f0[1] == STRING or f1[1] == STRING:
+                raise ValueError("Tipos incompatíveis")
+            if f0[0] > f1[0]:
+                return (1, BOOL)    
+            else:
+                return (0, BOOL)    
         elif self.valor == "<":
-            return self.filho[0].evaluate(ST) < self.filho[1].evaluate(ST)
+            if f0[1] == STRING or f1[1] == STRING:
+                raise ValueError("Tipos incompatíveis")
+            if f0[0] < f1[0]:
+                return (1, BOOL)    
+            else:
+                return (0, BOOL) 
         elif self.valor == "==":
-            return self.filho[0].evaluate(ST) == self.filho[1].evaluate(ST)
+            if f0[0] == f1[0]:
+                return (1, BOOL)
+            else:
+                return (0, BOOL)    
         elif self.valor == "&&":
-            return self.filho[0].evaluate(ST) and self.filho[1].evaluate(ST)
+            if f0[1] == STRING or f1[1] == STRING:
+                raise ValueError("Tipos incompatíveis")
+            if f0[0] and f1[0]:
+                return (1, BOOL)    
+            else:
+                return (0, BOOL) 
         elif self.valor == "||":
-            return self.filho[0].evaluate(ST) or self.filho[1].evaluate(ST)                          
+            if f0[1] == STRING or f1[1] == STRING:
+                raise ValueError("Tipos incompatíveis")
+            if f0[0] or f1[0]:
+                return (1, BOOL)    
+            else:
+                return (0, BOOL) 
 
 class UnOp(Node):
     def __init__(self, valor, filho):
@@ -414,20 +492,47 @@ class UnOp(Node):
 
     def evaluate(self, ST):
         if self.valor == "-":
-            res = self.filho[0].evaluate(ST)
-            return -res
+            res = self.filho[0].evaluate(ST)[0]
+            return (-res, INT)
         if self.valor == "+":
-            res = self.filho[0].evaluate(ST)
-            return res
-        else:
-            return not self.filho[0].evaluate(ST)     
+            res = self.filho[0].evaluate(ST)[0]
+            return (res, INT)
+        elif self.valor == "!":
+            if not self.filho[0].evaluate(ST)[0]:
+                return (BOOL, 1)     
+            else:
+                return (BOOL, 0) 
+
+class Type(Node):
+    def __init__(self, valor, filho):
+        super().__init__(valor, filho)  
+
+    def evaluate(self, ST):
+        return(self.valor)                   
 
 class IntVal(Node):
     def __init__(self, valor, filho):
         super().__init__(valor, filho)  
 
     def evaluate(self, ST):
-        return self.valor
+        return (self.valor, INT)
+
+class StringVal(Node):
+    def __init__(self, valor, filho):
+        super().__init__(valor, filho)  
+
+    def evaluate(self, ST):
+        return (self.valor, STRING)        
+
+class BoolVal(Node):
+    def __init__(self, valor, filho):
+        super().__init__(valor, filho)  
+
+    def evaluate(self, ST):
+        if self.valor == "false":
+            return (0, BOOL)
+        elif self.valor == "true":
+            return (1, BOOL)
 
 class NoOp(Node):
     def __init__(self):
@@ -449,7 +554,21 @@ class Assignment(Node):
         super().__init__(valor, filho)  
 
     def evaluate(self, ST):
-        ST.setter(self.filho[0].valor, self.filho[1].evaluate(ST))   
+        tipo = ST.getter(self.filho[0].valor)[1] #Declaração -> (nome da variável, [tipo, "TYPE"])
+        tupla = self.filho[1].evaluate(ST) #variável (valor, tipo)
+        if tipo == tupla[1]:
+            ST.setter(self.filho[0].valor, tupla[0]) #(nome da variável, value)
+        elif(tupla[1] == "int" and tipo == "bool"):
+            pass
+        else:
+            raise ValueError ("Variável não compatível com o tipo declarado.") 
+
+class VarDec(Node):
+    def __init__(self, valor, filho):
+        super().__init__(valor, filho)  
+
+    def evaluate(self, ST):
+        ST.creator(self.filho[0].valor, self.filho[1].evaluate(ST))                    
 
 class Block(Node):
     def __init__(self, valor, filho):
@@ -464,7 +583,14 @@ class Println(Node):
         super().__init__(valor, filho)  
 
     def evaluate(self, ST):
-        print(self.filho[0].evaluate(ST)) 
+        res = self.filho[0].evaluate(ST)
+        if res[1] == BOOL:
+            if res[0] == 0:
+                print("false")
+            else:
+                print("true")    
+        else:
+            print(res[0])        
 
 class Readln(Node):
     def __init__(self, valor, filho):
@@ -479,7 +605,7 @@ class While(Node):
         super().__init__(valor, filho)  
 
     def evaluate(self, ST):
-        while self.filho[0].evaluate(ST) == True: 
+        while self.filho[0].evaluate(ST)[0] == True: 
             self.filho[1].evaluate(ST) 
 
 class If(Node):
@@ -487,7 +613,7 @@ class If(Node):
         super().__init__(valor, filho)  
 
     def evaluate(self, ST):
-        if self.filho[0].evaluate(ST) == True:
+        if self.filho[0].evaluate(ST)[0] == True:
             return self.filho[1].evaluate(ST)
         elif len(self.filho) == 3:
             return self.filho[2].evaluate(ST)              
