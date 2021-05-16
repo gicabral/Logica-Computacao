@@ -562,7 +562,10 @@ class Assignment(Node):
         if tipo == tupla[1]:
             ST.setter(self.filho[0].valor, tupla[0]) #(nome da variável, value)
         elif(tupla[1] == "int" and tipo == "bool"):
-            ST.setter(self.filho[0].valor, tupla[0])
+            if tupla[0] == 0:
+                ST.setter(self.filho[0].valor, 0)
+            else: 
+                ST.setter(self.filho[0].valor, 1)    
             pass
         elif(tupla[1] == "bool" and tipo == "int"):
             ST.setter(self.filho[0].valor, tupla[0])
