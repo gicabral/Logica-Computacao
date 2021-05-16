@@ -621,10 +621,10 @@ class If(Node):
 
     def evaluate(self, ST):
         filho = self.filho[0].evaluate(ST)
-        if filho[1] != BOOL:
-            raise ValueError("Para essa operação só boolean é permito")
+        if filho[1] == STRING:
+            raise ValueError("Para essa operação string não é permitido")
         else:
-            if filho[0] == True:
+            if filho[0] == True or filho[0] > 0:
                 return self.filho[1].evaluate(ST)
             elif len(self.filho) == 3:
                 return self.filho[2].evaluate(ST)              
