@@ -478,6 +478,7 @@ class BinOp(Node):
                 return (1, BOOL)    
             else:
                 return (0, BOOL) 
+   
         elif self.valor == "||":
             if f0[1] == STRING or f1[1] == STRING:
                 raise ValueError("Tipos incompatíveis")
@@ -619,10 +620,14 @@ class If(Node):
         super().__init__(valor, filho)  
 
     def evaluate(self, ST):
-        if self.filho[0].evaluate(ST)[0] == True:
-            return self.filho[1].evaluate(ST)
-        elif len(self.filho) == 3:
-            return self.filho[2].evaluate(ST)              
+        filho = self.filho[0].evaluate(ST)
+        if filho[1] != BOOL:
+            raise ValueError("Para essa operação só boolean é permito")
+        else:
+            if filho[0] == True:
+                return self.filho[1].evaluate(ST)
+            elif len(self.filho) == 3:
+                return self.filho[2].evaluate(ST)              
 
 
 def main():
