@@ -10,11 +10,11 @@
 
 ## Status dos testes
 ![git status](http://3.129.230.99/svg/gicabral/Logica-Computacao/)
-## Diagrama Sintático com While, Else e If
+## Diagrama Sintático
 
-![](/imagens/ds-if1.png)
-![](/imagens/ds-if2.png)
+![](/imagens/ds-r7.png)
+![](/imagens/ds-r72.png)
 
 ## EBNF com bloco de While, Else e If 
 
-![](/imagens/EBNF-if.png)
+![](/imagens/EBNF-R7.png)
