@@ -15,6 +15,6 @@
 ![](/imagens/ds-r7.png)
 ![](/imagens/ds-r72.png)
 
-## EBNF com bloco de While, Else e If 
+## EBNF
 
 ![](/imagens/EBNF-R7.png)
