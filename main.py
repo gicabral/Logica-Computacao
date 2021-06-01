@@ -764,7 +764,8 @@ class FuncCall(Node):
             else:
                 raise ValueError("Return e Função tem diferentes tipos") 
         else:
-            return novaST.getter(self.valor)                       
+            raise ValueError("Função não tem return") 
+            # return novaST.getter(self.valor)                       
 
 class Return(Node):
     def __init__(self, valor, filho):
