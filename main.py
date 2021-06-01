@@ -3,8 +3,8 @@ import sys
 
 arquivo = sys.argv[1]
 
-reserved = ["println", "readln", "while", "if", "else", "int", "bool", "true", "false", "string"]
-PRINTLN, READLN, WHILE, IF, ELSE, INT, BOOL, TRUE, FALSE, STRING  = reserved
+reserved = ["println", "readln", "while", "if", "else", "int", "bool", "true", "false", "string", "return"]
+PRINTLN, READLN, WHILE, IF, ELSE, INT, BOOL, TRUE, FALSE, STRING, RETURN  = reserved
 
 class Token:
     def __init__(self, tipo, valor):
@@ -106,7 +106,11 @@ class Tokenizer:
 
         elif self.origin[self.position] == '<':
             self.actual = Token("menor", "<")
-            self.position = self.position + 1  
+            self.position = self.position + 1 
+
+        elif self.origin[self.position] == ',': 
+            self.actual = Token("comma", ",")
+            self.position = self.position + 1     
 
         elif self.origin[self.position] == '"':
             palavra = ""
@@ -125,11 +129,7 @@ class Tokenizer:
                     self.origin)) and (self.origin[self.position].isalpha() or self.origin[self.position].isdigit() or self.origin[self.position] == "_"):
                 palavra = palavra + self.origin[self.position]
                 self.position = self.position + 1       
-
-            # if palavra == TRUE:
-            #     self.actual = Token(BOOL, True)
-            # elif palavra == FALSE:
-            #     self.actual == Token(BOOL, False)    
+ 
             if palavra in reserved:
                 self.actual = Token(palavra, palavra)
             else:    
@@ -139,6 +139,57 @@ class Tokenizer:
             raise ValueError("Simbolo desconhecido", self.origin[self.position])
 
 class Parser:
+
+    @staticmethod
+    def funcdefblock():
+        nodes = []
+        while Parser.tokens.actual.type != "eof":
+            if Parser.tokens.actual.type == INT or Parser.tokens.actual.type == BOOL or Parser.tokens.actual.type == STRING:
+                tipo1 = Type(Parser.tokens.actual.type, [])
+                Parser.tokens.selectNext()
+                if Parser.tokens.actual.type == "identifier":
+                    identifier1 = Identifier(Parser.tokens.actual.value, [])
+                    Parser.tokens.selectNext()
+                    params = []
+                    if Parser.tokens.actual.type == "lpar":
+                        Parser.tokens.selectNext()
+                        if Parser.tokens.actual.type == BOOL or Parser.tokens.actual.type == INT or Parser.tokens.actual.type == STRING:
+                            tipo2 = Type(Parser.tokens.actual.type, [])
+                            Parser.tokens.selectNext()
+                            if Parser.tokens.actual.type == "identifier":
+                                identifier2 = Identifier(Parser.tokens.actual.value, [])
+                                Parser.tokens.selectNext()
+                                params.append(VarDec("variável", [identifier2, tipo2]))
+                                while Parser.tokens.actual.type == "comma":
+                                    Parser.tokens.selectNext()
+                                    if Parser.tokens.actual.type == BOOL or Parser.tokens.actual.type == INT or Parser.tokens.actual.type == STRING:
+                                        tipo3 = Type(Parser.tokens.actual.type, [])
+                                        Parser.tokens.selectNext()
+                                        if Parser.tokens.actual.type == "identifier":
+                                            identifier3 = Identifier(Parser.tokens.actual.value, [])
+                                            Parser.tokens.selectNext()
+                                            params.append(VarDec("variável", [identifier3, tipo3]))
+                                        else:
+                                            raise ValueError("Identifier não foi encontrado")  
+                                    else:
+                                        raise ValueError("Tipo do identifier não foi encontrado")         
+
+                        if Parser.tokens.actual.type == "rpar":
+                            Parser.tokens.selectNext()
+                            params.append(Parser.command())
+                        else:
+                            raise ValueError("Parentesis não localizado")    
+            else:
+                raise ValueError("Nenhuma função foi declarada") 
+
+            lista = [tipo1] + params
+            nodes.append(FuncDec(identifier1.valor, lista))
+
+        nodes.append(FuncCall("main", []))
+
+        return Block("Block", nodes)
+
+
     @staticmethod
     def block():
         nodes = []
@@ -167,6 +218,18 @@ class Parser:
                 Parser.tokens.selectNext()
                 node_l = Parser.parseOrExpression()
                 node = Assignment("=", [identifier, node_l])
+
+            elif Parser.tokens.actual.type == "lpar":
+                Parser.tokens.selectNext()
+                nodes = []
+                while Parser.tokens.actual.type != "rpar":
+                    nodes.append(Parser.parseOrExpression())
+                    if Parser.tokens.actual.type == "comma":
+                        Parser.tokens.selectNext()
+                if Parser.tokens.actual.type == "rpar":
+                    Parser.tokens.selectNext()
+                    return FuncCall(identifier.valor, nodes)        
+                    
             else:
                 raise ValueError("Atribuição com '=' não encontrada")     
 
@@ -232,8 +295,10 @@ class Parser:
                 Parser.tokens.selectNext()
                 node = VarDec("variável", [identifier, tipo])
 
-        # else:   
-        #     return NoOp()        
+        elif Parser.tokens.actual.type == RETURN:
+            Parser.tokens.selectNext()  
+            node = Return("return", [Parser.parseOrExpression()])  
+
 
         if Parser.tokens.actual.type == "semicolon":
             Parser.tokens.selectNext()
@@ -254,9 +319,21 @@ class Parser:
 
         elif Parser.tokens.actual.type == "identifier":
             res = Parser.tokens.actual.value
-            node = Identifier(res, [])
+            identifier = Identifier(res, [])
             Parser.tokens.selectNext()
-            return node
+            nodes = []
+            if Parser.tokens.actual.type == "lpar":
+                Parser.tokens.selectNext()
+                while Parser.tokens.actual.type != "rpar":
+                    nodes.append(Parser.parseOrExpression())
+                    if Parser.tokens.actual.type == "comma":
+                        Parser.tokens.selectNext()
+
+                if Parser.tokens.actual.type == "rpar":    
+                    Parser.tokens.selectNext()
+                    return FuncCall(identifier.valor, nodes)
+            else:            
+                return identifier
 
         elif Parser.tokens.actual.type == "plus" or Parser.tokens.actual.type == "minus" or Parser.tokens.actual.type == "not":
             if Parser.tokens.actual.type == "plus":
@@ -380,9 +457,9 @@ class Parser:
     def run(origin):
         Parser.tokens = Tokenizer(origin, None)
         Parser.tokens.selectNext()
-        res = Parser.block()
-        if Parser.tokens.actual.type != 'eof':
-            raise ValueError('Entrada inválida. Último token não é o EOF.')   
+        res = Parser.funcdefblock()
+        # if Parser.tokens.actual.type != 'eof':
+        #     raise ValueError('Entrada inválida. Último token não é o EOF.')   
         ST = SymbolTable()
         res.evaluate(ST)
         return res
@@ -395,12 +472,24 @@ class PrePro():
 
         
 class SymbolTable():
-    def __init__(self):
+    def __init__(self, anterior=None):
         self.table = {}
+        self.anterior = anterior
+        self.symbols = {'return': [None, None]}
 
-    def getter(self, chave):
+    def getter(self, chave, assignment=False):
         if chave in self.table.keys():
-            tupla = tuple(self.table.get(chave))
+            tupla = self.table[chave]
+            if tupla[0] == None and assignment == False:
+                if self.anterior != None:
+                    try:
+                        tupla = tuple(self.anterior.getter(chave))
+                    except:
+                        raise ValueError("Falha ao tentar fazer recursão")    
+            return tupla
+
+        elif self.anterior != None:
+            tupla = self.anterior.getter(chave)
             return tupla
 
         else:
@@ -419,6 +508,12 @@ class SymbolTable():
         else:
             self.table[chave] = [None, tipo]
             return   
+
+    def getter_return(self):
+        return self.symbols['return']
+
+    def setter_return(self, value, type):
+        self.symbols['return'] = [value, type]            
             
 class Node():
     def __init__(self, valor, filho):
@@ -557,7 +652,7 @@ class Assignment(Node):
         super().__init__(valor, filho)  
 
     def evaluate(self, ST):
-        tipo = ST.getter(self.filho[0].valor)[1] #Declaração -> (nome da variável, [tipo, "TYPE"])
+        tipo = ST.getter(self.filho[0].valor, True)[1] #Declaração -> (nome da variável, [tipo, "TYPE"])
         tupla = self.filho[1].evaluate(ST) #variável (valor, tipo)
         if tipo == tupla[1]:
             ST.setter(self.filho[0].valor, tupla[0]) #(nome da variável, value)
@@ -571,7 +666,7 @@ class Assignment(Node):
             ST.setter(self.filho[0].valor, tupla[0])
             pass
         else:
-            raise ValueError ("Variável não compatível com o tipo declarado.") 
+            raise ValueError ("Variável não compatível com o tipo declarado.", tipo, tupla[1]) 
 
 class VarDec(Node):
     def __init__(self, valor, filho):
@@ -585,8 +680,14 @@ class Block(Node):
         super().__init__(valor, filho)  
 
     def evaluate(self, ST):
-        for node in self.filho:
-            node.evaluate(ST)   
+        r = ST.getter_return()[0]
+        i = 0
+        while(r == None and i < len(self.filho)):
+            self.filho[i].evaluate(ST)
+            r = ST.getter_return()[0]
+            i = i + 1
+        # for node in self.filho:
+        #     node.evaluate(ST)   
 
 class Println(Node):
     def __init__(self, valor, filho):
@@ -630,8 +731,47 @@ class If(Node):
             if filho[0] == True or filho[0] > 0:
                 return self.filho[1].evaluate(ST)
             elif len(self.filho) == 3:
-                return self.filho[2].evaluate(ST)              
+                return self.filho[2].evaluate(ST)   
 
+class FuncDec(Node):
+    def __init__(self, valor, filho):
+        super().__init__(valor, filho)  
+
+    def evaluate(self, ST):
+        ST.creator(self.valor, self.filho[0].evaluate(ST))   
+        ST.setter(self.valor, self)  
+
+class FuncCall(Node):
+    def __init__(self, valor, filho):
+        super().__init__(valor, filho)  
+
+    def evaluate(self, ST):
+        novaST = SymbolTable(ST)
+        funcDec, tipo = novaST.getter(self.valor) 
+        vardecs = funcDec.filho[1:-1]
+        if len(vardecs) == len(self.filho):
+            novaST.creator(self.valor, funcDec.filho[0].evaluate(novaST)[0])
+            for i in range(len(vardecs)):
+                if vardecs[i].filho[1].valor == self.filho[i].evaluate(novaST)[1]:
+                    vardecs[i].evaluate(novaST)
+                    novaST.setter(vardecs[i].filho[0].valor, self.filho[i].evaluate(novaST)[0])
+        funcDec.filho[-1].evaluate(novaST)
+        res_return = novaST.getter_return()
+
+        if(res_return[1] != None):
+            if(res_return[1] == funcDec.filho[0].evaluate(novaST)):
+                return res_return 
+            else:
+                raise ValueError("Return e Função tem diferentes tipos") 
+        else:
+            return novaST.getter(self.valor)                       
+
+class Return(Node):
+    def __init__(self, valor, filho):
+        super().__init__(valor, filho) 
+
+    def evaluate(self, ST):
+        ST.setter_return(self.filho[0].evaluate(ST)[0], self.filho[0].evaluate(ST)[1])
 
 def main():
     with open(f"{arquivo}", "r") as file:
