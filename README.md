@@ -10,11 +10,14 @@
 
 ## Status dos testes
 ![git status](http://3.129.230.99/svg/gicabral/Logica-Computacao/)
-## Diagrama Sintático
-
-![](/imagens/ds-r7.png)
-![](/imagens/ds-r72.png)
 
 ## EBNF
 
-![](/imagens/EBNF-R7.png)
+![](/imagens/EBNF-func.png)
+
+## Diagrama Sintático
+
+![](/imagens/DS-func.png)
+![](/imagens/DS-func2.png)
+![](/imagens/DS-func3.png)
+![](/imagens/DS-func4.png)
