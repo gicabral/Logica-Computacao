@@ -1,6 +1,8 @@
+FUNCDEFBLOCK = (λ | (TYPE, "(", {TYPE, ","}, ")", COMMAND));
 BLOCK = "{", { COMMAND }, "}";
-COMMAND = ( λ | ASSIGNMENT | PRINT | WHILE | IF | BLOCK | TYPE), ";";
+COMMAND = ( λ | ASSIGNMENT | PRINT | WHILE | IF | BLOCK | TYPE | RETURN), ";";
 TYPE = (BOOL | INT | STRING), IDENTIFIER, ";";
+RETURN = "return", OREXPRESSION, ";";
 ASSIGNMENT = IDENTIFIER, "=", OREXPRESSION;
 PRINT = "println", "(", OREXPRESSION, ")";
 WHILE = "while", "(", OREXPRESSION, ")", COMMAND;
@@ -11,10 +13,14 @@ EQUALEXPRESSION = REALEXPRESSION, {"==", REALEXPRESSION};
 REALEXPRESSION = EXPRESSION, {(">" | "<"), EXPRESSION};
 EXPRESSION = TERM, {("+" | "-"), TERM};
 TERM = FACTOR, {("*" | "/"), FACTOR};
-FACTOR = (("+" | "-" | "!"), FACTOR) | NUMBER | "(", OREXPRESSION, ")" | IDENTIFIER | ("readln", "(", ")") | "true" | "false" | STRING;
+FACTOR = (("+" | "-" | "!"), FACTOR) | NUMBER | "(", OREXPRESSION, ")" | IDENTIFIER, {"(", {OREXPRESSION, ","}, ")"} | ("readln", "(", ")") | "true" | "false" | STRING;
 STRING = '""', {LETTER | DIGIT | SYMBOL}, '""';
 SYMBOL = (! | ... | ]);
 IDENTIFIER = LETTER, {LETTER | DIGIT | "_"};
 NUMBER = DIGIT, { DIGIT };
 DIGIT = ( 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0);
+
+
+
+
 
