@@ -791,9 +791,9 @@ class If(Node):
             self.filho[1].evaluate(ST)
             Assembler.AddString("JMP EndIf_{}".format(self.id))
  
-            if len(self.children) == 3:
+            if len(self.filho) == 3:
                 Assembler.AddString("Else_{}:".format(self.id))
-                self.children[2].evaluate(ST)
+                self.filho[2].evaluate(ST)
 
             Assembler.AddString("EndIf_{}:".format(self.id))
             # if filho[0] == True or filho[0] > 0:

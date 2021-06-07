@@ -1,4 +1,5 @@
 
+
 {
 int i;
 int n;
@@ -11,5 +12,14 @@ f = f * i;
 i = i + 1;
 }
 println(f);
+
+
+if (i > 0) {
+    println(4);
+}else{
+    println(2);
 }
+}
+ 
+
 

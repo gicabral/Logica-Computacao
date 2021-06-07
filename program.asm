@@ -125,6 +125,26 @@ MOV EBX, [EBP-12]
 PUSH EBX
 CALL print
 POP EBX
+if_15:
+MOV EBX, [EBP-4]
+PUSH EBX
+MOV EBX, 0
+POP EAX
+CMP EAX, EBX
+CALL binop_jg
+CMP EBX, False
+JE Else_15
+MOV EBX, 4
+PUSH EBX
+CALL print
+POP EBX
+JMP EndIf_15
+Else_15:
+MOV EBX, 2
+PUSH EBX
+CALL print
+POP EBX
+EndIf_15:
 ; interrupcao de saida
     POP EBP
     MOV EAX, 1
